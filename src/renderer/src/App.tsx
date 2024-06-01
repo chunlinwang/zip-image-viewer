@@ -22,23 +22,32 @@ function App(): JSX.Element {
   const [zoom, setZoom] = useState(100)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [password, setPassword] = useState('')
-  const [form, setForm] = useState(null)
+  const [form, setForm] = useState<HTMLFormElement>(null)
 
   async function openFile(): Promise<void> {
     setLoading(true)
 
-    try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const path = await window.api.open('showOpenDialog', {
-        title: 'Select a file',
-        buttonLabel: 'This one will do',
-        properties: ['openFile'],
-        filters: [{ name: 'Archived File', extensions: ['zip'] }]
-      })
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const path = await window.api.open('showOpenDialog', {
+      title: 'Select a file',
+      buttonLabel: 'This one will do',
+      properties: ['openFile'],
+      filters: [{ name: 'Archived File', extensions: ['zip'] }]
+    })
 
+    if (path) {
+      setFilePath(path)
+
+      await readFile(path)
+    }
+  }
+
+  async function readFile(path): Promise<void> {
+    setLoading(true)
+
+    try {
       if (path) {
-        setFilePath(path)
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const data = await window.api.read(path, password)
@@ -50,27 +59,7 @@ function App(): JSX.Element {
     } catch (e) {
       if (e === 'ADM-ZIP: Wrong Password') {
         setShowPasswordModal(true)
-      }
-    }
-  }
-
-  async function readFile(): Promise<void> {
-    setLoading(true)
-
-    try {
-      if (filePath) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const data = await window.api.read(filePath, password)
-        setFiles(data)
-        setPageNb(data.length)
-        setLoading(false)
-        setNoImage(data.length === 0)
-      }
-    } catch (e) {
-      if (e === 'ADM-ZIP: Wrong Password') {
-        setShowPasswordModal(true)
-        if (form) {
+        if (form instanceof HTMLFormElement) {
           form.reset()
         }
       }
@@ -109,7 +98,7 @@ function App(): JSX.Element {
     e.preventDefault()
     if (password) {
       setShowPasswordModal(false)
-      await readFile()
+      await readFile(filePath)
     }
   }
 
@@ -179,7 +168,7 @@ function App(): JSX.Element {
           <Form
             noValidate
             onSubmit={handlePasswordSubmit}
-            ref={(el) => {
+            ref={(el: HTMLFormElement) => {
               setForm(el)
             }}
           >
