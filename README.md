@@ -29,6 +29,18 @@ $ pnpm build:mac
 $ pnpm build:linux
 ```
 
+## Demo
+### Initial Screen
+![Demo1](https://github.com/chunlinwang/zip-image-viewer/raw/main/assets/images/initstate.png)
+### Open File Screen
+![Demo2](https://github.com/chunlinwang/zip-image-viewer/raw/main/assets/images/openfile.png)
+### Enter Password
+![Demo3](https://github.com/chunlinwang/zip-image-viewer/raw/main/assets/images/password.png)
+### Show Image
+![Demo4](https://github.com/chunlinwang/zip-image-viewer/raw/main/assets/images/image1.png)
+### After Zoom Out
+![Demo5](https://github.com/chunlinwang/zip-image-viewer/raw/main/assets/images/imageAfterZoom.png)
+
 
 ## requirement
 - Electron > 28.3.3

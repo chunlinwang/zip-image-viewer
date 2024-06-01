@@ -17,7 +17,6 @@ const api = {
     return filePath
   },
   read: async (filePath, password = ''): Promise<ExtractedImage[]> => {
-    console.log(filePath, password)
     let zipEntries: ExtractedImage[] = []
 
     if (filePath) {

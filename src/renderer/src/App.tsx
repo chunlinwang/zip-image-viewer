@@ -31,7 +31,7 @@ function App(): JSX.Element {
     // @ts-ignore
     const path = await window.api.open('showOpenDialog', {
       title: 'Select a file',
-      buttonLabel: 'This one will do',
+      buttonLabel: 'Open File',
       properties: ['openFile'],
       filters: [{ name: 'Archived File', extensions: ['zip'] }]
     })
@@ -40,6 +40,8 @@ function App(): JSX.Element {
       setFilePath(path)
 
       await readFile(path)
+    } else {
+      setLoading(false)
     }
   }
 
@@ -79,6 +81,10 @@ function App(): JSX.Element {
   }
 
   function next(): void {
+    if (curPage === pageNb - 1) {
+      return
+    }
+
     setCurPage(() => curPage + 1)
   }
 
@@ -157,7 +163,10 @@ function App(): JSX.Element {
       <div>
         <Modal
           show={showPasswordModal}
-          onHide={() => setShowPasswordModal(false)}
+          onHide={() => {
+            setLoading(false)
+            setShowPasswordModal(false)
+          }}
           dialogClassName="modal-90w"
           aria-labelledby="example-custom-modal-styling-title"
         >
@@ -189,7 +198,7 @@ function App(): JSX.Element {
 
             <Modal.Footer>
               <Button variant="primary" type="submit">
-                Save changes
+                Submit
               </Button>
             </Modal.Footer>
           </Form>
