@@ -1,22 +1,29 @@
 import { contextBridge, ipcRenderer, OpenDialogOptions } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import AdmZip from 'adm-zip'
 import { extractFiles } from '../utils/extractFiles'
 import { ExtractedImage } from '../utils/interface'
 
 // Custom APIs for renderer
 const api = {
-  open: async (method: string, args: OpenDialogOptions): Promise<ExtractedImage[]> => {
+  open: async (method: string, args: OpenDialogOptions): Promise<null | string> => {
     const fileObj = await ipcRenderer.invoke('dialog', method, args)
+
+    if (fileObj.canceled) {
+      return null
+    }
+
+    const [filePath] = fileObj.filePaths
+
+    return filePath
+  },
+  read: async (filePath, password = ''): Promise<ExtractedImage[]> => {
+    console.log(filePath, password)
     let zipEntries: ExtractedImage[] = []
 
-    if (!fileObj.canceled) {
-      const [filePath = null] = fileObj.filePaths
-      if (filePath) {
-        const zip = new AdmZip(filePath)
-        zipEntries = extractFiles(zip.getEntries())
-      }
+    if (filePath) {
+      zipEntries = extractFiles(filePath, password)
     }
+
     return zipEntries
   }
 }

@@ -7,34 +7,74 @@ import Image from 'react-bootstrap/Image'
 import Spinner from 'react-bootstrap/Spinner'
 import Row from 'react-bootstrap/Row'
 import Alert from 'react-bootstrap/Alert'
+import Modal from 'react-bootstrap/Modal'
+import Form from 'react-bootstrap/Form'
+
 import { ExtractedImage } from '../../utils/interface'
-import Versions from './components/Versions'
 
 function App(): JSX.Element {
   const [files, setFiles] = useState<ExtractedImage[]>([])
   const [pageNb, setPageNb] = useState(0)
+  const [filePath, setFilePath] = useState<string | null>(null)
   const [curPage, setCurPage] = useState(0)
   const [loading, setLoading] = useState(false)
   const [noImage, setNoImage] = useState(false)
   const [zoom, setZoom] = useState(100)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [password, setPassword] = useState('')
+  const [form, setForm] = useState(null)
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   async function openFile(): Promise<void> {
     setLoading(true)
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const data = await window.api.open('showOpenDialog', {
-      title: 'Select a file',
-      buttonLabel: 'This one will do',
-      properties: ['openFile'],
-      filters: [{ name: 'Archived File', extensions: ['zip'] }]
-    })
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const path = await window.api.open('showOpenDialog', {
+        title: 'Select a file',
+        buttonLabel: 'This one will do',
+        properties: ['openFile'],
+        filters: [{ name: 'Archived File', extensions: ['zip'] }]
+      })
 
-    setFiles(data)
-    setPageNb(data.length)
-    setLoading(false)
-    setNoImage(data.length === 0)
+      if (path) {
+        setFilePath(path)
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const data = await window.api.read(path, password)
+        setFiles(data)
+        setPageNb(data.length)
+        setLoading(false)
+        setNoImage(data.length === 0)
+      }
+    } catch (e) {
+      if (e === 'ADM-ZIP: Wrong Password') {
+        setShowPasswordModal(true)
+      }
+    }
+  }
+
+  async function readFile(): Promise<void> {
+    setLoading(true)
+
+    try {
+      if (filePath) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const data = await window.api.read(filePath, password)
+        setFiles(data)
+        setPageNb(data.length)
+        setLoading(false)
+        setNoImage(data.length === 0)
+      }
+    } catch (e) {
+      if (e === 'ADM-ZIP: Wrong Password') {
+        setShowPasswordModal(true)
+        if (form) {
+          form.reset()
+        }
+      }
+    }
   }
 
   function changePage(page: number): void {
@@ -65,9 +105,20 @@ function App(): JSX.Element {
     setZoom(100)
   }
 
+  async function handlePasswordSubmit(e): Promise<void> {
+    e.preventDefault()
+    if (password) {
+      setShowPasswordModal(false)
+      await readFile()
+    }
+  }
+
+  function handlePassword(e): void {
+    setPassword(e.target.value)
+  }
+
   return (
     <>
-      <Versions></Versions>
       <Row>
         <ButtonToolbar aria-label="Toolbar with Button groups">
           <ButtonGroup className="me-2" aria-label="First group">
@@ -78,7 +129,7 @@ function App(): JSX.Element {
             )}
             {pageNb > 0 && (
               <Button variant="primary" onClick={init}>
-                Init
+                INIT
               </Button>
             )}
           </ButtonGroup>
@@ -114,6 +165,47 @@ function App(): JSX.Element {
           alt={files[curPage].name}
         ></Image>
       )}
+      <div>
+        <Modal
+          show={showPasswordModal}
+          onHide={() => setShowPasswordModal(false)}
+          dialogClassName="modal-90w"
+          aria-labelledby="example-custom-modal-styling-title"
+        >
+          <Modal.Header closeButton>
+            <Modal.Title className={'form-text'}>Password ?</Modal.Title>
+          </Modal.Header>
+
+          <Form
+            noValidate
+            onSubmit={handlePasswordSubmit}
+            ref={(el) => {
+              setForm(el)
+            }}
+          >
+            <Modal.Body>
+              <Form.Label className={'form-text'} htmlFor="inputPassword5">
+                <Alert variant="danger">Password is Wrong</Alert>
+              </Form.Label>
+              <Form.Control
+                type="password"
+                id="password"
+                aria-describedby="passwordHelpBlock"
+                onChange={handlePassword}
+              />
+              <Form.Text id="passwordHelpBlock" muted>
+                This is a encrypted file, Please put the password.
+              </Form.Text>
+            </Modal.Body>
+
+            <Modal.Footer>
+              <Button variant="primary" type="submit">
+                Save changes
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
+      </div>
     </>
   )
 }
